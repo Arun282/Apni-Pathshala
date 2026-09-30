@@ -5,5 +5,6 @@ Kids learning Android app.
 - Hindi अ-ज्ञ
 - Tap any card to hear pronunciation
 - Learning data is stored in app assets and versioned in GitHub.
-## Build APK
-GitHub → Actions → Build Apni Pathshala APK → Run workflow. Download the generated artifact.
+
+## APK
+APK build is triggered automatically on every push. The debug APK is uploaded as a GitHub Actions artifact named **apni-pathshala-apk**.
