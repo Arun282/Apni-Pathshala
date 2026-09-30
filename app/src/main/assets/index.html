@@ -1,9 +1,70 @@
-<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(#fff8d8,#e7f7ff);color:#263238}header{text-align:center;padding:22px;background:#ffd54f;border-radius:0 0 28px 28px}h1{margin:0;color:#6d4c41}.wrap{padding:18px;max-width:720px;margin:auto}.cards,.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.grid{grid-template-columns:repeat(3,1fr)}button{border:0;border-radius:20px;background:#fff;padding:18px;box-shadow:0 4px 12px #0002;font-weight:bold}.card{min-height:135px;font-size:23px}.card b{display:block;font-size:44px;margin-bottom:8px}.item{min-height:120px}.big{display:block;font-size:40px}.small{display:block;font-size:14px;margin-top:7px}.top{display:flex;gap:10px;align-items:center;margin-bottom:15px}.back{padding:10px 14px;background:#ffe082}.title{font-size:26px;font-weight:bold}.note{text-align:center;background:#fff3cd;border-radius:15px;padding:12px;margin-bottom:15px}.hidden{display:none}
-</style></head><body><header><h1>🌟 Apni Pathshala</h1><div>Learn • Listen • Play</div></header><main class="wrap"><section id="home"><div class="cards"><button class="card" onclick="openTab('abc')"><b>🔤</b>ABCD</button><button class="card" onclick="openTab('numbers')"><b>🔢</b>1 से 100</button><button class="card" onclick="openTab('hindi')"><b>🇮🇳</b>अ आ इ</button><button class="card" onclick="say('Welcome to Apni Pathshala. चलो पढ़ते हैं!')"><b>🔊</b>Listen</button></div></section><section id="page" class="hidden"></section></main>
+<!doctype html>
+<html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#fff3b0,#d9f7ff 48%,#ffe1ef);color:#243447}
+header{position:relative;text-align:center;padding:18px 16px 20px;background:linear-gradient(135deg,#ffcc4d,#ff8fab);border-radius:0 0 34px 34px;box-shadow:0 6px 18px #0002;overflow:hidden}
+header:before,header:after{content:"";position:absolute;width:80px;height:80px;border-radius:50%;background:#ffffff35;top:-25px}header:before{left:-15px}header:after{right:-15px}
+.brand{position:relative;z-index:1;font-size:29px;font-weight:900;color:#5b2b2b}.tag{position:relative;z-index:1;font-weight:bold;color:#fff}
+.kids{font-size:48px;line-height:1;margin:4px 0}.wrap{padding:18px;max-width:760px;margin:auto}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+button{border:0;border-radius:24px;background:#fff;padding:14px;box-shadow:0 5px 14px #0002;font-weight:800;color:#263238;transition:.12s}
+button:active{transform:scale(.96)}.homecard{min-height:165px;font-size:22px}.homeicon{font-size:52px;margin-bottom:5px}
+.item{min-height:185px;padding:10px}.pic{width:100%;height:108px;display:block;border-radius:18px;margin-bottom:7px;background:#f8fbff}.big{display:block;font-size:34px;color:#e85d75}.small{display:block;font-size:15px;margin-top:4px}.speak{display:inline-block;margin-top:7px;background:#eaf8ff;border-radius:30px;padding:6px 11px;font-size:13px}
+.top{display:flex;gap:10px;align-items:center;margin-bottom:14px}.back{padding:10px 14px;background:#fff0a8;font-size:16px}.title{font-size:24px;font-weight:900}
+.note{text-align:center;background:#ffffffdd;border:2px dashed #ff9f68;border-radius:18px;padding:11px;margin-bottom:14px;font-weight:bold}
+.hidden{display:none}.tip{margin:14px 0;text-align:center;font-size:13px;color:#5f6b76}
+@media(min-width:600px){.grid{grid-template-columns:repeat(4,1fr)}}
+</style></head>
+<body>
+<header><div class="kids">👦🏻 📚 👧🏻</div><div class="brand">🌈 Apni Pathshala</div><div class="tag">Learn • Listen • Play • Smile 😊</div></header>
+<main class="wrap">
+<section id="home">
+<div class="cards">
+<button class="homecard" onclick="openTab('abc')"><div class="homeicon">🔤</div>ABCD<br><span class="small">A to Z</span></button>
+<button class="homecard" onclick="openTab('numbers')"><div class="homeicon">🔢</div>1 से 100<br><span class="small">Numbers</span></button>
+<button class="homecard" onclick="openTab('hindi')"><div class="homeicon">अ आ इ</div>हिंदी वर्णमाला<br><span class="small">स्वर और व्यंजन</span></button>
+<button class="homecard" onclick="sayHindi('Welcome to Apni Pathshala. चलो पढ़ते हैं!')"><div class="homeicon">🔊</div>Listen<br><span class="small">आवाज़ सुनें</span></button>
+</div>
+<div class="tip">💡 किसी भी picture card पर tap करें — शब्द की आवाज़ सुनाई देगी।</div>
+</section>
+<section id="page" class="hidden"></section>
+</main>
 <script>
 const DATA={"abc":[["A","Apple","सेब"],["B","Ball","गेंद"],["C","Cat","बिल्ली"],["D","Dog","कुत्ता"],["E","Elephant","हाथी"],["F","Fish","मछली"],["G","Grapes","अंगूर"],["H","Hen","मुर्गी"],["I","Ice cream","आइसक्रीम"],["J","Jug","जग"],["K","Kite","पतंग"],["L","Lion","शेर"],["M","Mango","आम"],["N","Nest","घोंसला"],["O","Orange","संतरा"],["P","Parrot","तोता"],["Q","Queen","रानी"],["R","Rabbit","खरगोश"],["S","Sun","सूरज"],["T","Tiger","बाघ"],["U","Umbrella","छाता"],["V","Van","गाड़ी"],["W","Watch","घड़ी"],["X","Xylophone","जाइलोफोन"],["Y","Yak","याक"],["Z","Zebra","ज़ेबरा"]],"hindi":[["अ","अनार"],["आ","आम"],["इ","इमली"],["ई","ईख"],["उ","उल्लू"],["ऊ","ऊट"],["ऋ","ऋषि"],["ए","एकतार"],["ऐ","ऐनक"],["ओ","ओखली"],["औ","औरत"],["अं","अंगूर"],["अः","खाली"],["क","कबूतर"],["ख","खरगोश"],["ग","गमला"],["घ","घड़ी"],["ङ","खाली"],["च","चम्मच"],["छ","छाता"],["ज","जहाज"],["झ","झंडा"],["ञ","खाली"],["ट","टमाटर"],["ठ","ठठेरा"],["ड","डमरू"],["ढ","ढक्कन"],["ण","खाली"],["त","तरबूज"],["थ","थर्मस"],["द","दवात"],["ध","धनुष"],["न","नल"],["प","पतंग"],["फ","फल"],["ब","बत्तख"],["भ","भालू"],["म","मछली"],["य","यज्ञ"],["र","रथ"],["ल","लट्टू"],["व","वक"],["श","शलजम"],["ष","षट्कोण"],["स","सपेरा"],["ह","हल / हाथी"],["क्ष","क्षत्रिय"],["त्र","त्रिशूल"],["ज्ञ","ज्ञानी"]],"numbers":[[1,"1"],[2,"2"],[3,"3"],[4,"4"],[5,"5"],[6,"6"],[7,"7"],[8,"8"],[9,"9"],[10,"10"],[11,"11"],[12,"12"],[13,"13"],[14,"14"],[15,"15"],[16,"16"],[17,"17"],[18,"18"],[19,"19"],[20,"20"],[21,"21"],[22,"22"],[23,"23"],[24,"24"],[25,"25"],[26,"26"],[27,"27"],[28,"28"],[29,"29"],[30,"30"],[31,"31"],[32,"32"],[33,"33"],[34,"34"],[35,"35"],[36,"36"],[37,"37"],[38,"38"],[39,"39"],[40,"40"],[41,"41"],[42,"42"],[43,"43"],[44,"44"],[45,"45"],[46,"46"],[47,"47"],[48,"48"],[49,"49"],[50,"50"],[51,"51"],[52,"52"],[53,"53"],[54,"54"],[55,"55"],[56,"56"],[57,"57"],[58,"58"],[59,"59"],[60,"60"],[61,"61"],[62,"62"],[63,"63"],[64,"64"],[65,"65"],[66,"66"],[67,"67"],[68,"68"],[69,"69"],[70,"70"],[71,"71"],[72,"72"],[73,"73"],[74,"74"],[75,"75"],[76,"76"],[77,"77"],[78,"78"],[79,"79"],[80,"80"],[81,"81"],[82,"82"],[83,"83"],[84,"84"],[85,"85"],[86,"86"],[87,"87"],[88,"88"],[89,"89"],[90,"90"],[91,"91"],[92,"92"],[93,"93"],[94,"94"],[95,"95"],[96,"96"],[97,"97"],[98,"98"],[99,"99"],[100,"100"]]};
-function say(t){if(!('speechSynthesis'in window))return;speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang=/[\u0900-\u097F]/.test(t)?'hi-IN':'en-US';speechSynthesis.speak(u)}
+const EMOJI={
+Apple:"🍎",Ball:"⚽",Cat:"🐱",Dog:"🐶",Elephant:"🐘",Fish:"🐟",Grapes:"🍇",Hen:"🐔","Ice cream":"🍦",Jug:"🫗",Kite:"🪁",Lion:"🦁",Mango:"🥭",Nest:"🪺",Orange:"🍊",Parrot:"🦜",Queen:"👸",Rabbit:"🐰",Sun:"☀️",Tiger:"🐯",Umbrella:"☂️",Van:"🚐",Watch:"⌚",Xylophone:"🎶",Yak:"🐂",Zebra:"🦓",
+"अनार":"🍎","आम":"🥭","इमली":"🌿","ईख":"🌾","उल्लू":"🦉","ऊट":"🐪","ऋषि":"🧘","एकतार":"🎵","ऐनक":"👓","ओखली":"🥣","औरत":"👩","अंगूर":"🍇","कबूतर":"🕊️","खरगोश":"🐰","गमला":"🪴","घड़ी":"⏰","चम्मच":"🥄","छाता":"☂️","जहाज":"🚢","झंडा":"🚩","टमाटर":"🍅","ठठेरा":"🔨","डमरू":"🥁","ढक्कन":"🫙","तरबूज":"🍉","थर्मस":"🧴","दवात":"🖋️","धनुष":"🏹","नल":"🚰","पतंग":"🪁","फल":"🍎","बत्तख":"🦆","भालू":"🐻","मछली":"🐟","यज्ञ":"🔥","रथ":"🛞","लट्टू":"🪀","वक":"🐦","शलजम":"🥬","षट्कोण":"⬡","सपेरा":"🐍","हल / हाथी":"🚜","क्षत्रिय":"🛡️","त्रिशूल":"🔱","ज्ञानी":"🧠"
+};
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function svgPicture(word,emoji){
+ const e=emoji||"⭐";
+ const safe=encodeURIComponent(e);
+ return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 220"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fff8c9"/><stop offset="1" stop-color="#dff6ff"/></linearGradient></defs><rect width="360" height="220" rx="30" fill="url(#g)"/><circle cx="55" cy="45" r="22" fill="#ffcf56"/><circle cx="310" cy="50" r="28" fill="#ff9fba"/><text x="180" y="135" text-anchor="middle" font-size="105">'+decodeURIComponent(safe)+'</text><text x="180" y="194" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700" fill="#5b6470">'+esc(word)+'</text></svg>');
+}
+function numberPic(n){
+ let dots=Math.min(12,(n%12)||12), circles="";
+ for(let i=0;i<dots;i++) circles+='<circle cx="'+(55+(i%6)*50)+'" cy="'+(65+Math.floor(i/6)*55)+'" r="15" fill="#ff8fab"/>';
+ return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 170"><rect width="360" height="170" rx="28" fill="#e8f8ff"/>'+circles+'<text x="180" y="150" text-anchor="middle" font-family="Arial" font-size="30" font-weight="900" fill="#5b2b2b">'+n+'</text></svg>');
+}
+function nativeSpeak(text,lang){if(window.AndroidTTS){AndroidTTS.speak(text,lang);return true}return false}
+function say(text,lang){
+ if(nativeSpeak(text,lang||(/[\u0900-\u097F]/.test(text)?'hi-IN':'en-US'))) return;
+ if('speechSynthesis' in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(text);u.lang=lang||'hi-IN';u.rate=.82;u.pitch=1.05;speechSynthesis.speak(u)}
+}
+function sayHindi(text){say(text,'hi-IN')}
+function speakABC(letter,word,meaning){say(letter+' for '+word,'en-US');setTimeout(()=>say(word+' यानी '+meaning,'hi-IN'),900)}
+function speakHindi(letter,word){say(letter+' से '+word,'hi-IN')}
 function home(){document.getElementById('home').classList.remove('hidden');document.getElementById('page').classList.add('hidden')}
-function openTab(k){document.getElementById('home').classList.add('hidden');let p=document.getElementById('page');p.classList.remove('hidden');let title=k==='abc'?'🔤 ABCD':k==='hindi'?'🇮🇳 हिंदी वर्णमाला':'🔢 Numbers 1–100';let arr=DATA[k];p.innerHTML='<div class="top"><button class="back" onclick="home()">← Home</button><div class="title">'+title+'</div></div><div class="note">किसी card पर tap करें और आवाज़ सुनें 🔊</div><div class="grid">'+arr.map(x=>{let text=k==='abc'?x[0]+' for '+x[1]+'. '+x[1]+' means '+x[2]:k==='hindi'?x[0]+' से '+x[1]:x[0];return '<button class="item" onclick="say('+JSON.stringify(text)+')"><span class="big">'+x[0]+'</span><span class="small">'+(x[1]||'')+(x[2]?' ('+x[2]+')':'')+'</span>🔊</button>'}).join('')+'</div>'}
+function openTab(k){
+ document.getElementById('home').classList.add('hidden');let p=document.getElementById('page');p.classList.remove('hidden');
+ let title=k==='abc'?'🔤 ABCD':k==='hindi'?'🇮🇳 हिंदी वर्णमाला':'🔢 Numbers 1–100',arr=DATA[k];
+ let cards=arr.map(x=>{
+   if(k==='numbers'){let n=x[0];return '<button class="item" onclick="say(\''+n+'\',\'en-US\')"><img class="pic" src="'+numberPic(n)+'"><span class="big">'+n+'</span><span class="speak">🔊 सुनें</span></button>'}
+   let letter=x[0],word=x[1],meaning=x[2],emoji=EMOJI[word]||'⭐';
+   let onclick=k==='abc'?'speakABC('+JSON.stringify(letter)+','+JSON.stringify(word)+','+JSON.stringify(meaning)+')':'speakHindi('+JSON.stringify(letter)+','+JSON.stringify(word)+')';
+   let label=k==='abc'?word+' ('+meaning+')':word;
+   return '<button class="item" onclick="'+onclick+'"><img class="pic" src="'+svgPicture(word,emoji)+'"><span class="big">'+esc(letter)+'</span><span class="small">'+esc(label)+'</span><span class="speak">🔊 सुनें</span></button>'
+ }).join('');
+ p.innerHTML='<div class="top"><button class="back" onclick="home()">← Home</button><div class="title">'+title+'</div></div><div class="note">👆 Picture पर tap करें और आवाज़ सुनें 🔊</div><div class="grid">'+cards+'</div>';
+}
 </script></body></html>
