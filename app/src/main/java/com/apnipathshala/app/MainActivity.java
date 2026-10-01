@@ -2,6 +2,7 @@ package com.apnipathshala.app;
 
 import android.app.Activity;
 import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.webkit.JavascriptInterface;
@@ -33,45 +34,52 @@ public class MainActivity extends Activity {
                 tts.setSpeechRate(0.82f);
                 tts.setPitch(1.05f);
                 tts.setAudioAttributes(new AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build());
 
                 while (!pending.isEmpty()) {
                     String[] item = pending.poll();
-                    speakNow(item[0], item[1]);
+                    speakNow(item[0], item[1], TextToSpeech.QUEUE_ADD);
                 }
             }
         });
-
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    private void speakNow(String text, String language) {
+    private Locale pickLocale(String language) {
+        boolean hindi = language != null && language.toLowerCase(Locale.ROOT).startsWith("hi");
+        Locale[] choices = hindi
+                ? new Locale[]{new Locale("hi", "IN"), new Locale("hi"), Locale.getDefault()}
+                : new Locale[]{new Locale("en", "IN"), Locale.US, Locale.getDefault()};
+
+        for (Locale candidate : choices) {
+            int available = tts.isLanguageAvailable(candidate);
+            if (available == TextToSpeech.LANG_AVAILABLE ||
+                    available == TextToSpeech.LANG_COUNTRY_AVAILABLE ||
+                    available == TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE) {
+                return candidate;
+            }
+        }
+        return Locale.getDefault();
+    }
+
+    private void speakNow(String text, String language, int queueMode) {
         if (tts == null || !ttsReady || text == null || text.trim().isEmpty()) return;
 
-        Locale requested = (language != null &&
-                language.toLowerCase(Locale.ROOT).startsWith("hi"))
-                ? new Locale("hi", "IN") : Locale.US;
+        Locale useLocale = pickLocale(language);
+        int result = tts.setLanguage(useLocale);
 
-        int available = tts.isLanguageAvailable(requested);
-        Locale useLocale = requested;
-
-        if (available == TextToSpeech.LANG_NOT_SUPPORTED ||
-                available == TextToSpeech.LANG_MISSING_DATA) {
-            useLocale = Locale.US;
+        if (result == TextToSpeech.LANG_NOT_SUPPORTED ||
+                result == TextToSpeech.LANG_MISSING_DATA) {
+            result = tts.setLanguage(Locale.US);
         }
-
-        int setResult = tts.setLanguage(useLocale);
-        if (setResult == TextToSpeech.LANG_NOT_SUPPORTED ||
-                setResult == TextToSpeech.LANG_MISSING_DATA) {
-            tts.setLanguage(Locale.US);
-        }
+        if (result == TextToSpeech.LANG_NOT_SUPPORTED ||
+                result == TextToSpeech.LANG_MISSING_DATA) return;
 
         Bundle params = new Bundle();
-        params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, android.media.AudioManager.STREAM_MUSIC);
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, params,
-                "apni_pathshala_" + System.nanoTime());
+        params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC);
+        tts.speak(text, queueMode, params, "apni_pathshala_" + System.nanoTime());
     }
 
     private class TTSBridge {
@@ -85,7 +93,7 @@ public class MainActivity extends Activity {
                 return;
             }
 
-            runOnUiThread(() -> speakNow(text, language));
+            runOnUiThread(() -> speakNow(text, language, TextToSpeech.QUEUE_FLUSH));
         }
     }
 
