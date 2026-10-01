@@ -25,7 +25,7 @@ button:active{transform:scale(.96)}.homecard{min-height:165px;font-size:22px}.ho
 <button class="homecard" onclick="openTab('hindi')"><div class="homeicon">अ आ इ</div>हिंदी वर्णमाला<br><span class="small">स्वर और व्यंजन</span></button>
 <button class="homecard" onclick="playAudio('home.mp3')"><div class="homeicon">🔊</div>Listen<br><span class="small">आवाज़ सुनें</span></button>
 </div>
-<div class="tip">🌐 Internet ON रखें। किसी भी picture card पर tap करें — online आवाज़ सुनाई देगी।</div>
+<div class="tip">📦 आवाज़ें app के अंदर हैं — Internet की जरूरत नहीं। किसी भी card पर tap करें और आवाज़ सुनें।</div>
 </section>
 <section id="page" class="hidden"></section>
 </main>
@@ -51,9 +51,6 @@ function say(text,lang){ if(/^\d+$/.test(String(text))) return playAudio('number
 function sayHindi(text){ return playAudio('home.mp3'); }
 function speakABC(letter,word,meaning){ playAudio('abc_'+letter+'.mp3'); }
 function speakHindi(letter,word,index){ playAudio('hindi_'+String(index).padStart(2,'0')+'.mp3'); }
-function speakHindi(letter,word,index){
- say(letter+' से '+word,'hi-IN');
-}
 function home(){document.getElementById('home').classList.remove('hidden');document.getElementById('page').classList.add('hidden')}
 function openTab(k){
  document.getElementById('home').classList.add('hidden');let p=document.getElementById('page');p.classList.remove('hidden');
