@@ -48,11 +48,12 @@ function numberPic(n){
 }
 function nativeSpeak(text,lang){if(window.AndroidTTS){AndroidTTS.speak(text,lang);return true}return false}
 function say(text,lang){
- if(nativeSpeak(text,lang||(/[\u0900-\u097F]/.test(text)?'hi-IN':'en-US'))) return;
- if('speechSynthesis' in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(text);u.lang=lang||'hi-IN';u.rate=.82;u.pitch=1.05;speechSynthesis.speak(u)}
+ const useLang=lang||(/\\u0900-\\u097F/.test(text)?'hi-IN':'en-IN');
+ if(nativeSpeak(text,useLang)) return;
+ if('speechSynthesis' in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(text);u.lang=useLang;u.rate=.82;u.pitch=1.05;speechSynthesis.speak(u)}
 }
 function sayHindi(text){say(text,'hi-IN')}
-function speakABC(letter,word,meaning){say(letter+' for '+word,'en-US');setTimeout(()=>say(word+' यानी '+meaning,'hi-IN'),900)}
+function speakABC(letter,word,meaning){say(letter+' for '+word+'. '+word+' यानी '+meaning,'hi-IN')}
 function speakHindi(letter,word){say(letter+' से '+word,'hi-IN')}
 function home(){document.getElementById('home').classList.remove('hidden');document.getElementById('page').classList.add('hidden')}
 function openTab(k){
