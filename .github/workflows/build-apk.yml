@@ -1,106 +1,36 @@
 name: Build Apni Pathshala APK
-on: [push, workflow_dispatch]
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
- build:
-  runs-on: ubuntu-latest
-  steps:
-   - uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-   - name: Install natural offline speech tools
-     run: |
-      sudo apt-get update
-      sudo apt-get install -y ffmpeg
-      python3 -m pip install --upgrade pip
-      python3 -m pip install piper-tts
-      rm -rf app/src/main/assets/audio
-      mkdir -p app/src/main/assets/audio
-      mkdir -p .voices
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-      # Natural neural voices are downloaded only during the build.
-      # English: en_GB-cori-medium (public-domain training data listing).
-      # Hindi: hi_IN-rohan-medium (IndicTTS voice; attribution/license retained).
-      python3 -m piper.download_voices en_GB-cori-medium --data-dir .voices
-      python3 -m piper.download_voices hi_IN-rohan-medium --data-dir .voices
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
 
-      cat > /tmp/make_audio.py <<'PY'
-      import subprocess, os
+      - name: Build debug APK
+        run: gradle --no-daemon assembleDebug
 
-      out = "app/src/main/assets/audio"
-      data = ".voices"
+      - name: Verify APK
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
 
-      abc = [
-       ("A","Apple","सेब"),("B","Ball","गेंद"),("C","Cat","बिल्ली"),("D","Dog","कुत्ता"),
-       ("E","Elephant","हाथी"),("F","Fish","मछली"),("G","Grapes","अंगूर"),("H","Hen","मुर्गी"),
-       ("I","Ice cream","आइसक्रीम"),("J","Jug","जग"),("K","Kite","पतंग"),("L","Lion","शेर"),
-       ("M","Mango","आम"),("N","Nest","घोंसला"),("O","Orange","संतरा"),("P","Parrot","तोता"),
-       ("Q","Queen","रानी"),("R","Rabbit","खरगोश"),("S","Sun","सूरज"),("T","Tiger","बाघ"),
-       ("U","Umbrella","छाता"),("V","Van","गाड़ी"),("W","Watch","घड़ी"),("X","Xylophone","जाइलोफोन"),
-       ("Y","Yak","याक"),("Z","Zebra","ज़ेब्रा")
-      ]
-
-      hindi = [
-       "अ से अनार","आ से आम","इ से इमली","ई से ईख","उ से उल्लू","ऊ से ऊट","ऋ से ऋषि",
-       "ए से एकतार","ऐ से ऐनक","ओ से ओखली","औ से औरत","अं से अंगूर","अः से खाली",
-       "क से कबूतर","ख से खरगोश","ग से गमला","घ से घड़ी","ङ से खाली","च से चम्मच",
-       "छ से छाता","ज से जहाज","झ से झंडा","ञ से खाली","ट से टमाटर","ठ से ठठेरा",
-       "ड से डमरू","ढ से ढक्कन","ण से खाली","त से तरबूज","थ से थर्मस","द से दवात",
-       "ध से धनुष","न से नल","प से पतंग","फ से फल","ब से बत्तख","भ से भालू",
-       "म से मछली","य से यज्ञ","र से रथ","ल से लट्टू","व से वक","श से शलजम",
-       "ष से षट्कोण","स से सपेरा","ह से हल / हाथी","क्ष से क्षत्रिय","त्र से त्रिशूल","ज्ञ से ज्ञानी"
-      ]
-
-      def piper(text, model, outfile):
-          subprocess.run([
-              "python3","-m","piper","-m",model,"--data-dir",data,
-              "-f",outfile,"--",text
-          ], check=True)
-
-      for letter, word, meaning in abc:
-          en = os.path.join(out, f"abc_{letter}.en.wav")
-          hi = os.path.join(out, f"abc_{letter}.hi.wav")
-          final = os.path.join(out, f"abc_{letter}.wav")
-          piper(f"{letter} for {word}", "en_GB-cori-medium", en)
-          piper(f"{word} यानी {meaning}", "hi_IN-rohan-medium", hi)
-          subprocess.run([
-              "ffmpeg","-y","-loglevel","error","-i",en,"-i",hi,
-              "-filter_complex","[0:a][1:a]concat=n=2:v=0:a=1",final
-          ], check=True)
-          os.remove(en); os.remove(hi)
-
-      for i, phrase in enumerate(hindi):
-          piper(phrase, "hi_IN-rohan-medium", os.path.join(out, f"hi_{i}.wav"))
-      PY
-
-      python3 /tmp/make_audio.py
-
-      cat > app/src/main/assets/audio/LICENSE.txt <<'EOF'
-      Apni Pathshala audio attribution
-
-      English voice:
-      Piper en_GB-cori-medium. The voice is distributed through the Piper voice collection.
-      Training-data license is listed as public domain in the cstr/piper-voices-GGUF voice index.
-
-      Hindi voice:
-      Piper hi_IN-rohan-medium, trained on IIT Madras IndicTTS Hindi Mono Male data.
-      Source: https://www.iitm.ac.in/donlab/indictts
-      The model card points to the IIT Madras IndicTTS license. Keep this notice with redistributions.
-
-      These are synthesized TTS outputs, not recordings downloaded from YouTube.
-      EOF
-
-   - uses: actions/setup-java@v4
-     with:
-      distribution: temurin
-      java-version: '17'
-
-   - uses: gradle/actions/setup-gradle@v4
-     with:
-      gradle-version: '8.10'
-
-   - run: gradle assembleDebug
-
-   - uses: actions/upload-artifact@v4
-     with:
-      name: apni-pathshala-apk
-      path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apni-pathshala-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
