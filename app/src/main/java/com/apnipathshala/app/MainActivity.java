@@ -1,8 +1,6 @@
 package com.apnipathshala.app;
 
 import android.app.Activity;
-import android.content.Context;
-import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -10,25 +8,20 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     private WebView webView;
     private MediaPlayer mediaPlayer;
-    private final Map<String, String> audioFiles = new HashMap<>();
+    private final List<String> queue = new ArrayList<>();
+    private int queueIndex = 0;
 
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
-
-        AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        if (am != null) am.setMode(AudioManager.MODE_NORMAL);
-
-        prepareAudioFiles();
 
         webView = new WebView(this);
         WebSettings s = webView.getSettings();
@@ -37,49 +30,44 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
         s.setMediaPlaybackRequiresUserGesture(false);
-        webView.addJavascriptInterface(new AudioBridge(), "AndroidAudio");
+
+        webView.addJavascriptInterface(new OnlineAudioBridge(), "OnlineAudio");
         setContentView(webView);
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    private void prepareAudioFiles() {
-        File dir = new File(getCacheDir(), "apni_audio");
-        if (!dir.exists()) dir.mkdirs();
-
-        for (char c = 'A'; c <= 'Z'; c++) copyAudio("abc_" + c + ".wav", dir);
-        for (int i = 0; i <= 48; i++) copyAudio("hi_" + i + ".wav", dir);
+    private String ttsUrl(String text, String lang) throws Exception {
+        String q = URLEncoder.encode(text, "UTF-8");
+        String tl = (lang == null || lang.trim().isEmpty()) ? "hi-IN" : lang;
+        return "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl="
+                + URLEncoder.encode(tl, "UTF-8") + "&q=" + q;
     }
 
-    private void copyAudio(String name, File dir) {
-        try {
-            File out = new File(dir, name);
-            if (!out.exists() || out.length() < 1000) {
-                try (InputStream in = getAssets().open("audio/" + name);
-                     FileOutputStream fos = new FileOutputStream(out)) {
-                    byte[] buf = new byte[8192];
-                    int n;
-                    while ((n = in.read(buf)) != -1) fos.write(buf, 0, n);
-                }
-            }
-            if (out.exists() && out.length() >= 1000) {
-                audioFiles.put(name, out.getAbsolutePath());
-            }
-        } catch (Exception ignored) {}
+    private void playOnlineSequence(String[] texts, String[] langs) {
+        releasePlayer();
+        queue.clear();
+        queueIndex = 0;
+
+        if (texts == null || texts.length == 0) return;
+        for (int i = 0; i < texts.length; i++) {
+            try {
+                String lang = (langs != null && i < langs.length) ? langs[i] : "hi-IN";
+                queue.add(ttsUrl(texts[i], lang));
+            } catch (Exception ignored) {}
+        }
+        playNextOnline();
     }
 
-    private void playSound(String fileName) {
-        String path = audioFiles.get(fileName);
-        if (path == null) return;
+    private void playNextOnline() {
+        if (queueIndex >= queue.size()) {
+            queue.clear();
+            return;
+        }
 
+        final String url = queue.get(queueIndex++);
         try {
-            releasePlayer();
-
             MediaPlayer mp = new MediaPlayer();
-            mp.setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build());
-            mp.setDataSource(path);
+            mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mp.setOnPreparedListener(player -> {
                 mediaPlayer = player;
                 player.setVolume(1.0f, 1.0f);
@@ -88,16 +76,19 @@ public class MainActivity extends Activity {
             mp.setOnCompletionListener(player -> {
                 player.release();
                 if (mediaPlayer == player) mediaPlayer = null;
+                playNextOnline();
             });
             mp.setOnErrorListener((player, what, extra) -> {
                 try { player.reset(); } catch (Exception ignored) {}
-                player.release();
+                try { player.release(); } catch (Exception ignored) {}
                 if (mediaPlayer == player) mediaPlayer = null;
+                playNextOnline();
                 return true;
             });
+            mp.setDataSource(url);
             mp.prepareAsync();
         } catch (Exception ignored) {
-            releasePlayer();
+            playNextOnline();
         }
     }
 
@@ -109,20 +100,29 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class AudioBridge {
+    private class OnlineAudioBridge {
         @JavascriptInterface
-        public void play(String fileName) {
-            if (fileName == null || fileName.trim().isEmpty()) return;
-            runOnUiThread(() -> playSound(fileName));
+        public void speak(String text, String lang) {
+            if (text == null || text.trim().isEmpty()) return;
+            runOnUiThread(() -> playOnlineSequence(
+                    new String[]{text},
+                    new String[]{lang}
+            ));
+        }
+
+        @JavascriptInterface
+        public void speakSequence(String[] texts, String[] langs) {
+            if (texts == null || texts.length == 0) return;
+            runOnUiThread(() -> playOnlineSequence(texts, langs));
         }
     }
 
     @Override
     protected void onDestroy() {
         releasePlayer();
-        audioFiles.clear();
+        queue.clear();
         if (webView != null) {
-            webView.removeJavascriptInterface("AndroidAudio");
+            webView.removeJavascriptInterface("OnlineAudio");
             webView.destroy();
             webView = null;
         }
