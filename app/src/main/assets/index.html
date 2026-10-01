@@ -62,7 +62,14 @@ function say(text,lang){
 }
 function sayHindi(text){say(text,'hi-IN')}
 function speakABC(letter,word,meaning){
- say(letter+' for '+word+'. '+word+' यानी '+meaning,'hi-IN');
+ if(window.AndroidTTS){
+   AndroidTTS.speakSequence(
+     letter+' for '+word,'en-US',
+     word+' यानी '+meaning,'hi-IN'
+   );
+   return;
+ }
+ say(letter+' for '+word+'. '+word+' यानी '+meaning,'en-US');
 }
 function speakHindi(letter,word,index){
  say(letter+' से '+word,'hi-IN');
