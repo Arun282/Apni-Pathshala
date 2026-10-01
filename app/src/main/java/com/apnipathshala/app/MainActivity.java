@@ -80,7 +80,8 @@ public class MainActivity extends Activity {
             pendingSound = fileName;
             return;
         }
-        soundPool.stop(id);
+        soundPool.autoPause();
+        soundPool.autoResume();
         soundPool.play(id, 1f, 1f, 1, 0, 1f);
     }
 
