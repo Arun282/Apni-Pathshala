@@ -9,7 +9,6 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -109,7 +108,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             tts.speak(
                     text,
                     TextToSpeech.QUEUE_FLUSH,
-                    new HashMap<String, String>(),
+                    new Bundle(),
                     "apni_pathshala_" + System.currentTimeMillis()
             );
         } catch (Exception ignored) {}
