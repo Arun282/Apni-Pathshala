@@ -59,6 +59,13 @@ jobs:
             speak "$f" en-US-AnaNeural "$n"
           done
 
+          # Make every bundled voice track consistently loud while preventing clipping.
+          for f in app/src/main/assets/audio/*.mp3; do
+            tmp="${f}.loud.mp3"
+            ffmpeg -y -loglevel error -i "$f" -af "loudnorm=I=-10:TP=-1.0:LRA=7" -codec:a libmp3lame -b:a 128k "$tmp"
+            mv "$tmp" "$f"
+          done
+
           count=$(find app/src/main/assets/audio -type f -name '*.mp3' | wc -l)
           echo "Natural voice files: $count"
           test "$count" -eq 176
