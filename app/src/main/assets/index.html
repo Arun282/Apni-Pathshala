@@ -23,7 +23,7 @@ button:active{transform:scale(.96)}.homecard{min-height:165px;font-size:22px}.ho
 <button class="homecard" onclick="openTab('abc')"><div class="homeicon">🔤</div>ABCD<br><span class="small">A to Z</span></button>
 <button class="homecard" onclick="openTab('numbers')"><div class="homeicon">🔢</div>1 से 100<br><span class="small">Numbers</span></button>
 <button class="homecard" onclick="openTab('hindi')"><div class="homeicon">अ आ इ</div>हिंदी वर्णमाला<br><span class="small">स्वर और व्यंजन</span></button>
-<button class="homecard" onclick="sayHindi('Welcome to Apni Pathshala. चलो पढ़ते हैं!')"><div class="homeicon">🔊</div>Listen<br><span class="small">आवाज़ सुनें</span></button>
+<button class="homecard" onclick="playAudio('home.mp3')"><div class="homeicon">🔊</div>Listen<br><span class="small">आवाज़ सुनें</span></button>
 </div>
 <div class="tip">🌐 Internet ON रखें। किसी भी picture card पर tap करें — online आवाज़ सुनाई देगी।</div>
 </section>
@@ -46,31 +46,11 @@ function numberPic(n){
  for(let i=0;i<dots;i++) circles+='<circle cx="'+(55+(i%6)*50)+'" cy="'+(65+Math.floor(i/6)*55)+'" r="15" fill="#ff8fab"/>';
  return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 170"><rect width="360" height="170" rx="28" fill="#e8f8ff"/>'+circles+'<text x="180" y="150" text-anchor="middle" font-family="Arial" font-size="30" font-weight="900" fill="#5b2b2b">'+n+'</text></svg>');
 }
-function nativeSpeak(text,lang){
- if(window.AndroidTTS){AndroidTTS.speak(text,lang||'hi-IN');return true}
- return false
-}
-function say(text,lang){
- const useLang=lang||(/\\u0900-\\u097F/.test(text)?'hi-IN':'en-IN');
- if(nativeSpeak(text,useLang)) return;
- if('speechSynthesis' in window){
-   speechSynthesis.cancel();
-   let u=new SpeechSynthesisUtterance(text);
-   u.lang=useLang;u.rate=.85;u.pitch=1.05;
-   speechSynthesis.speak(u);
- }
-}
-function sayHindi(text){say(text,'hi-IN')}
-function speakABC(letter,word,meaning){
- if(window.AndroidTTS){
-   AndroidTTS.speakSequence(
-     letter+' for '+word,'en-US',
-     word+' यानी '+meaning,'hi-IN'
-   );
-   return;
- }
- say(letter+' for '+word+'. '+word+' यानी '+meaning,'en-US');
-}
+function playAudio(file){ if(window.AndroidAudio){ AndroidAudio.play(file); return true; } return false; }
+function say(text,lang){ if(/^\d+$/.test(String(text))) return playAudio('number_'+String(text).padStart(3,'0')+'.mp3'); return playAudio('home.mp3'); }
+function sayHindi(text){ return playAudio('home.mp3'); }
+function speakABC(letter,word,meaning){ playAudio('abc_'+letter+'.mp3'); }
+function speakHindi(letter,word,index){ playAudio('hindi_'+String(index).padStart(2,'0')+'.mp3'); }
 function speakHindi(letter,word,index){
  say(letter+' से '+word,'hi-IN');
 }
