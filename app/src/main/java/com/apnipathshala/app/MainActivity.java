@@ -1,6 +1,7 @@
 package com.apnipathshala.app;
 
 import android.app.Activity;
+import android.media.AudioAttributes;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.webkit.JavascriptInterface;
@@ -27,10 +28,15 @@ public class MainActivity extends Activity {
         setContentView(webView);
 
         tts = new TextToSpeech(this, status -> {
-            if (status == TextToSpeech.SUCCESS) {
+            if (status == TextToSpeech.SUCCESS && tts != null) {
                 ttsReady = true;
                 tts.setSpeechRate(0.82f);
                 tts.setPitch(1.05f);
+                tts.setAudioAttributes(new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build());
+
                 while (!pending.isEmpty()) {
                     String[] item = pending.poll();
                     speakNow(item[0], item[1]);
@@ -42,20 +48,30 @@ public class MainActivity extends Activity {
     }
 
     private void speakNow(String text, String language) {
-        if (tts == null || !ttsReady) return;
+        if (tts == null || !ttsReady || text == null || text.trim().isEmpty()) return;
 
-        Locale requested = (language != null && language.toLowerCase(Locale.ROOT).startsWith("hi"))
+        Locale requested = (language != null &&
+                language.toLowerCase(Locale.ROOT).startsWith("hi"))
                 ? new Locale("hi", "IN") : Locale.US;
 
-        int result = tts.setLanguage(requested);
+        int available = tts.isLanguageAvailable(requested);
+        Locale useLocale = requested;
 
-        if (result == TextToSpeech.LANG_MISSING_DATA ||
-            result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            // Keep speech working even if Hindi voice data is unavailable.
+        if (available == TextToSpeech.LANG_NOT_SUPPORTED ||
+                available == TextToSpeech.LANG_MISSING_DATA) {
+            useLocale = Locale.US;
+        }
+
+        int setResult = tts.setLanguage(useLocale);
+        if (setResult == TextToSpeech.LANG_NOT_SUPPORTED ||
+                setResult == TextToSpeech.LANG_MISSING_DATA) {
             tts.setLanguage(Locale.US);
         }
 
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "apni_pathshala_" + System.currentTimeMillis());
+        Bundle params = new Bundle();
+        params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, android.media.AudioManager.STREAM_MUSIC);
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, params,
+                "apni_pathshala_" + System.nanoTime());
     }
 
     private class TTSBridge {
