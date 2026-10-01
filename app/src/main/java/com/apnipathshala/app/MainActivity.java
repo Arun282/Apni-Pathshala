@@ -2,7 +2,7 @@ package com.apnipathshala.app;
 
 import android.app.Activity;
 import android.media.AudioAttributes;
-import android.media.SoundPool;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
@@ -13,74 +13,93 @@ import java.util.Map;
 
 public class MainActivity extends Activity {
     private WebView webView;
-    private SoundPool soundPool;
-    private final Map<String,Integer> sounds = new HashMap<>();
-    private final Map<Integer,Boolean> loaded = new HashMap<>();
-    private String pendingSound = null;
+    private MediaPlayer mediaPlayer;
+    private final Map<String, byte[]> audioCache = new HashMap<>();
+    private final Map<String, android.content.res.AssetFileDescriptor> descriptors = new HashMap<>();
 
     @Override
     public void onCreate(Bundle b) {
         super.onCreate(b);
 
-        AudioAttributes attrs = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build();
-        soundPool = new SoundPool.Builder()
-                .setMaxStreams(2)
-                .setAudioAttributes(attrs)
-                .build();
-
-        soundPool.setOnLoadCompleteListener((pool, sampleId, status) -> {
-            if (status == 0) {
-                loaded.put(sampleId, true);
-                if (pendingSound != null) {
-                    String name = pendingSound;
-                    pendingSound = null;
-                    playSound(name);
-                }
-            }
-        });
-
-        preloadSounds();
+        preloadAudio();
 
         webView = new WebView(this);
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setAllowFileAccess(true);
+        s.setMediaPlaybackRequiresUserGesture(false);
         webView.addJavascriptInterface(new AudioBridge(), "AndroidAudio");
         setContentView(webView);
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    private void preloadSounds() {
+    /*
+     * MediaPlayer is used instead of SoundPool. This is more reliable for the
+     * bundled WAV files and avoids SoundPool load/play timing problems.
+     */
+    private void preloadAudio() {
         for (char c = 'A'; c <= 'Z'; c++) {
-            loadAsset("abc_" + c + ".wav");
+            cacheAsset("abc_" + c + ".wav");
         }
         for (int i = 0; i <= 48; i++) {
-            loadAsset("hi_" + i + ".wav");
+            cacheAsset("hi_" + i + ".wav");
         }
     }
 
-    private void loadAsset(String fileName) {
+    private void cacheAsset(String fileName) {
         try {
-            int id = soundPool.load(getAssets().openFd("audio/" + fileName), 1);
-            sounds.put(fileName, id);
-            loaded.put(id, false);
+            android.content.res.AssetFileDescriptor afd =
+                    getAssets().openFd("audio/" + fileName);
+            descriptors.put(fileName, afd);
         } catch (IOException ignored) {
         }
     }
 
     private void playSound(String fileName) {
-        if (soundPool == null) return;
-        Integer id = sounds.get(fileName);
-        if (id == null) return;
-        if (!Boolean.TRUE.equals(loaded.get(id))) {
-            pendingSound = fileName;
-            return;
+        if (fileName == null || fileName.trim().isEmpty()) return;
+        android.content.res.AssetFileDescriptor afd = descriptors.get(fileName);
+        if (afd == null) return;
+
+        try {
+            if (mediaPlayer != null) {
+                try { mediaPlayer.stop(); } catch (Exception ignored) {}
+                mediaPlayer.release();
+                mediaPlayer = null;
+            }
+
+            MediaPlayer mp = new MediaPlayer();
+            mp.setAudioAttributes(new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build());
+
+            mp.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+            mp.setOnPreparedListener(player -> {
+                mediaPlayer = player;
+                player.setVolume(1.0f, 1.0f);
+                player.start();
+            });
+            mp.setOnCompletionListener(player -> {
+                player.release();
+                if (mediaPlayer == player) mediaPlayer = null;
+            });
+            mp.setOnErrorListener((player, what, extra) -> {
+                player.release();
+                if (mediaPlayer == player) mediaPlayer = null;
+                return true;
+            });
+            mp.prepareAsync();
+        } catch (Exception ignored) {
+            try { mpRelease(); } catch (Exception ignored2) {}
         }
-        soundPool.play(id, 1f, 1f, 1, 0, 1f);
+    }
+
+    private void mpRelease() {
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 
     private class AudioBridge {
@@ -93,10 +112,11 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        if (soundPool != null) {
-            soundPool.release();
-            soundPool = null;
+        mpRelease();
+        for (android.content.res.AssetFileDescriptor afd : descriptors.values()) {
+            try { afd.close(); } catch (Exception ignored) {}
         }
+        descriptors.clear();
         if (webView != null) {
             webView.removeJavascriptInterface("AndroidAudio");
             webView.destroy();
