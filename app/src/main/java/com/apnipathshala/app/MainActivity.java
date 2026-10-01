@@ -128,6 +128,38 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 }
             });
         }
+
+        @JavascriptInterface
+        public void speakSequence(String first, String firstLang, String second, String secondLang) {
+            if (first == null || first.trim().isEmpty()) return;
+            runOnUiThread(() -> {
+                if (!ttsReady) {
+                    pendingText = first + (second == null || second.trim().isEmpty() ? "" : " " + second);
+                    pendingLang = firstLang == null ? "hi-IN" : firstLang;
+                    return;
+                }
+
+                tts.stop();
+                setVoiceFor(firstLang);
+                tts.speak(first, TextToSpeech.QUEUE_FLUSH, new HashMap<String, String>(),
+                        "apni_first_" + System.currentTimeMillis());
+
+                if (second != null && !second.trim().isEmpty()) {
+                    setVoiceFor(secondLang);
+                    tts.speak(second, TextToSpeech.QUEUE_ADD, new HashMap<String, String>(),
+                            "apni_second_" + System.currentTimeMillis());
+                }
+            });
+        }
+    }
+
+    private void setVoiceFor(String langTag) {
+        try {
+            Locale locale = Locale.forLanguageTag(
+                    (langTag == null || langTag.trim().isEmpty()) ? "hi-IN" : langTag);
+            tts.setLanguage(locale);
+            preferNetworkVoice(locale.toLanguageTag());
+        } catch (Exception ignored) {}
     }
 
     @Override
