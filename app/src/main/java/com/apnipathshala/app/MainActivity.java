@@ -6,6 +6,7 @@ import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
@@ -35,19 +36,19 @@ public class MainActivity extends Activity {
     private void requestMusicFocus() {
         try {
             if (audioManager == null) return;
-            if (android.os.Build.VERSION.SDK_INT >= 26) {
+            if (Build.VERSION.SDK_INT >= 26) {
                 AudioAttributes attrs = new AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build();
-                audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                         .setAudioAttributes(attrs)
                         .setAcceptsDelayedFocusGain(false)
                         .build();
                 audioManager.requestAudioFocus(audioFocusRequest);
             } else {
                 audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC,
-                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
             }
         } catch (Exception ignored) {}
     }
@@ -55,7 +56,7 @@ public class MainActivity extends Activity {
     private void abandonMusicFocus() {
         try {
             if (audioManager == null) return;
-            if (android.os.Build.VERSION.SDK_INT >= 26 && audioFocusRequest != null) {
+            if (Build.VERSION.SDK_INT >= 26 && audioFocusRequest != null) {
                 audioManager.abandonAudioFocusRequest(audioFocusRequest);
             } else {
                 audioManager.abandonAudioFocus(null);
@@ -73,10 +74,14 @@ public class MainActivity extends Activity {
                 }
                 requestMusicFocus();
                 player = new MediaPlayer();
-                player.setAudioAttributes(new AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                        .build());
+                if (Build.VERSION.SDK_INT < 21) {
+                    player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                } else {
+                    player.setAudioAttributes(new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build());
+                }
                 android.content.res.AssetFileDescriptor afd =
                         getAssets().openFd("audio/" + fileName);
                 player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
