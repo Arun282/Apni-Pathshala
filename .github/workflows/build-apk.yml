@@ -61,7 +61,7 @@ jobs:
 
           count=$(find app/src/main/assets/audio -type f -name '*.mp3' | wc -l)
           echo "Natural voice files: $count"
-          test "$count" -eq 175
+          test "$count" -eq 176
           for f in app/src/main/assets/audio/*.mp3; do test -s "$f"; done
 
       - name: Set up Java
