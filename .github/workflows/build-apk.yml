@@ -13,7 +13,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg python3-pip
-          python3 -m pip install --user edge-tts
+          python3 -m pip install --user --upgrade edge-tts
 
       - name: Generate bundled natural voices
         shell: bash
@@ -24,8 +24,16 @@ jobs:
 
           speak() {
             file="$1"; voice="$2"; text="$3"
-            edge-tts --voice "$voice" --rate="-10%" --pitch="+0Hz" --text "$text" --write-media "app/src/main/assets/audio/$file"
-            test -s "app/src/main/assets/audio/$file"
+            for attempt in 1 2 3; do
+              rm -f "app/src/main/assets/audio/$file"
+              if edge-tts --voice "$voice" --rate="-10%" --pitch="+0Hz" --text "$text" --write-media "app/src/main/assets/audio/$file" && test -s "app/src/main/assets/audio/$file"; then
+                return 0
+              fi
+              echo "Voice generation retry $attempt for $file"
+              sleep 3
+            done
+            echo "Failed to generate $file"
+            exit 1
           }
 
           speak home.mp3 en-US-AnaNeural "Welcome to Apni Pathshala. Let's learn and play."
