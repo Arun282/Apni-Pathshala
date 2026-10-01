@@ -8,26 +8,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      - name: Install voice tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y espeak-ng ffmpeg
+      - name: Generate bundled voices
+        shell: bash
+        run: |
+          set -e
+          mkdir -p app/src/main/assets/audio
+          gen_one() {
+            file="$1"; voice="$2"; text="$3"
+            espeak-ng -v "$voice" -s 145 -w /tmp/voice.wav "$text"
+            ffmpeg -y -loglevel error -i /tmp/voice.wav -codec:a libmp3lame -b:a 48k "app/src/main/assets/audio/$file"
+          }
+          gen_mix() {
+            file="$1"; en="$2"; hi="$3"
+            espeak-ng -v en-us -s 145 -w /tmp/en.wav "$en"
+            espeak-ng -v hi -s 140 -w /tmp/hi.wav "$hi"
+            printf "file '/tmp/en.wav'\nfile '/tmp/hi.wav'\n" > /tmp/list.txt
+            ffmpeg -y -loglevel error -f concat -safe 0 -i /tmp/list.txt -c:a libmp3lame -b:a 48k "app/src/main/assets/audio/$file"
+          }
+          gen_one "home.mp3" "en" "Welcome to Apni Pathshala. Lets learn and play."
+          words=("A|Apple|सेब" "B|Ball|गेंद" "C|Cat|बिल्ली" "D|Dog|कुत्ता" "E|Elephant|हाथी" "F|Fish|मछली" "G|Grapes|अंगूर" "H|Hen|मुर्गी" "I|Ice cream|आइसक्रीम" "J|Jug|जग" "K|Kite|पतंग" "L|Lion|शेर" "M|Mango|आम" "N|Nest|घोंसला" "O|Orange|संतरा" "P|Parrot|तोता" "Q|Queen|रानी" "R|Rabbit|खरगोश" "S|Sun|सूरज" "T|Tiger|बाघ" "U|Umbrella|छाता" "V|Van|गाड़ी" "W|Watch|घड़ी" "X|Xylophone|जाइलोफोन" "Y|Yak|याक" "Z|Zebra|ज़ेब्रा")
+          for item in "${words[@]}"; do IFS='|' read -r l w h <<< "$item"; gen_mix "abc_${l}.mp3" "${l} for ${w}" "${w} यानी ${h}"; done
+          hindi=("अ|अनार" "आ|आम" "इ|इमली" "ई|ईख" "उ|उल्लू" "ऊ|ऊट" "ऋ|ऋषि" "ए|एकतार" "ऐ|ऐनक" "ओ|ओखली" "औ|औरत" "अं|अंगूर" "अः|" "क|कबूतर" "ख|खरगोश" "ग|गमला" "घ|घड़ी" "ङ|" "च|चम्मच" "छ|छाता" "ज|जहाज" "झ|झंडा" "ञ|" "ट|टमाटर" "ठ|ठठेरा" "ड|डमरू" "ढ|ढक्कन" "ण|" "त|तरबूज" "थ|थर्मस" "द|दवात" "ध|धनुष" "न|नल" "प|पतंग" "फ|फल" "ब|बत्तख" "भ|भालू" "म|मछली" "य|यज्ञ" "र|रथ" "ल|लट्टू" "व|वक" "श|शलजम" "ष|षट्कोण" "स|सपेरा" "ह|हल" "क्ष|क्षत्रिय" "त्र|त्रिशूल" "ज्ञ|ज्ञानी")
+          i=0
+          for item in "${hindi[@]}"; do IFS='|' read -r l w <<< "$item"; if [ -n "$w" ]; then text="${l} से ${w}"; else text="${l}"; fi; printf -v n "%02d" "$i"; gen_one "hindi_${n}.mp3" "hi" "$text"; i=$((i+1)); done
+          for n in $(seq 1 100); do printf -v f "number_%03d.mp3" "$n"; gen_one "$f" "en" "$n"; done
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10'
-
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
-
       - name: Verify APK
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
           ls -lh app/build/outputs/apk/debug/app-debug.apk
-
+          test $(find app/src/main/assets/audio -type f | wc -l) -eq 175
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
