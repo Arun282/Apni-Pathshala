@@ -47,14 +47,15 @@ function numberPic(n){
  return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 170"><rect width="360" height="170" rx="28" fill="#e8f8ff"/>'+circles+'<text x="180" y="150" text-anchor="middle" font-family="Arial" font-size="30" font-weight="900" fill="#5b2b2b">'+n+'</text></svg>');
 }
 function nativeSpeak(text,lang){if(window.AndroidTTS){AndroidTTS.speak(text,lang);return true}return false}
+function playAudio(file){if(window.AndroidAudio){AndroidAudio.play(file);return true}return false}
 function say(text,lang){
  const useLang=lang||(/\\u0900-\\u097F/.test(text)?'hi-IN':'en-IN');
  if(nativeSpeak(text,useLang)) return;
  if('speechSynthesis' in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(text);u.lang=useLang;u.rate=.82;u.pitch=1.05;speechSynthesis.speak(u)}
 }
 function sayHindi(text){say(text,'hi-IN')}
-function speakABC(letter,word,meaning){say(letter+' for '+word+'. '+word+' यानी '+meaning,'hi-IN')}
-function speakHindi(letter,word){say(letter+' से '+word,'hi-IN')}
+function speakABC(letter,word,meaning){if(playAudio('abc_'+letter+'.wav'))return;say(letter+' for '+word+'. '+word+' यानी '+meaning,'hi-IN')}
+function speakHindi(letter,word,index){if(playAudio('hi_'+index+'.wav'))return;say(letter+' से '+word,'hi-IN')}
 function home(){document.getElementById('home').classList.remove('hidden');document.getElementById('page').classList.add('hidden')}
 function openTab(k){
  document.getElementById('home').classList.add('hidden');let p=document.getElementById('page');p.classList.remove('hidden');
@@ -62,7 +63,7 @@ function openTab(k){
  let cards=arr.map(x=>{
    if(k==='numbers'){let n=x[0];return '<button class="item" onclick="say(\''+n+'\',\'en-US\')"><img class="pic" src="'+numberPic(n)+'"><span class="big">'+n+'</span><span class="speak">🔊 सुनें</span></button>'}
    let letter=x[0],word=x[1],meaning=x[2],emoji=EMOJI[word]||'⭐';
-   let onclick=k==='abc'?'speakABC('+JSON.stringify(letter)+','+JSON.stringify(word)+','+JSON.stringify(meaning)+')':'speakHindi('+JSON.stringify(letter)+','+JSON.stringify(word)+')';
+   let onclick=k==='abc'?'speakABC('+JSON.stringify(letter)+','+JSON.stringify(word)+','+JSON.stringify(meaning)+')':'speakHindi('+JSON.stringify(letter)+','+JSON.stringify(word)+','+arr.indexOf(x)+')';
    let label=k==='abc'?word+' ('+meaning+')':word;
    return '<button class="item" onclick="'+onclick+'"><img class="pic" src="'+svgPicture(word,emoji)+'"><span class="big">'+esc(letter)+'</span><span class="small">'+esc(label)+'</span><span class="speak">🔊 सुनें</span></button>'
  }).join('');
